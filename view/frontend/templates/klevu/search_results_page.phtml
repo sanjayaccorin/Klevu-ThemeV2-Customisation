@@ -1,0 +1,393 @@
+<?php /** @var Klevu\FrontendJs\Block\Template $block */ ?>
+<!-- Define our own, custom version of the klevuLandingTemplateResultsHeadingTitle template -->
+<script type="template/klevu" id="klevuLandingTemplateSortByCustom">
+  <div class="kuDropdown kuDropSortBy" role="listbox">
+    <div class="kuDropdownLabel"><%=helper.translate("Sort by : ")%> <%=helper.translate(helper.getSortBy(dataLocal))%></div>
+    <div class="kuDropdownOptions">
+        <div class="kuDropOption kuSort" data-value="PRICE_ASC" role="option"><%=helper.translate("Price Low to High")%></div>
+        <div class="kuDropOption kuSort" data-value="PRICE_DESC" role="option"><%=helper.translate("Price High to Low")%></div>
+        <div class="kuDropOption kuSort" data-value="RELEVANCE" role="option"><%=helper.translate("Best Selling")%></div>
+      <div class="kuDropOption kuSort" data-value="NEW_ARRIVAL_DESC" role="option"><%=helper.translate("Newest")%></div>
+  </div>
+ </div>
+</script>
+
+</script><script type="template/klevu" id="klevuLandingTemplateInfiniteScrollDown">
+    <div class="kuInfiniteScrollContainer">
+        <button class="kuLoadMoreBtn">View More</button>
+    </div>
+</script>
+
+<script type="template/klevu" id="klevuLandingTemplateTabResults">
+    <div class="kuTabs category-landing-page" role="tablist">
+        <% var selectedTab = false; %>
+        <% helper.each(data.query,function(key,query){ %>
+            <% if(query.tab == true) { %>
+                <% if(helper.hasResults(data,query.id) || helper.hasFilters(data,query.id)) { %>
+					<span class="search-results searchTermWithCount">
+						<p class="search-term-result"><%=helper.translate("SEARCH RESULTS")%></p>
+						<%
+							var searchedTerm = helper.escapeHTML(data.settings.term);
+							var isCATNAV = data.settings.isCATNAV;
+							if(isCATNAV){
+								searchedTerm = helper.escapeHTML(data.settings.categoryPath);
+							}
+						%>
+						<span class="kuTab productTermWithCount<% if(!selectedTab){ selectedTab = true; %> kuTabSelected<% } %>" data-section="<%=query.id%>" role="tab" tabindex="0" aria-selected="" area-label="Products tab">
+							<%=helper.translate('"' + klevu.dom.helpers.cleanCatogeryPath(searchedTerm) + '"')%>
+							<%=helper.translate("(" + data.query[query.id].meta.totalResultsFound + ")")%>
+						</span>
+					</span>
+                <% } %>
+            <% } %>
+        <% }); %>
+    </div>
+</script>
+
+<script type="template/klevu" id="klevuLandingTemplateProductBlock">
+    <%
+        var updatedProductName = dataLocal.name;
+        if(klevu.search.modules.kmcInputs.base.getSkuOnPageEnableValue()) {
+            if(klevu.dom.helpers.cleanUpSku(dataLocal.sku)) {
+                updatedProductName += klevu.dom.helpers.cleanUpSku(dataLocal.sku);
+            }
+        }
+    %>
+    <li ku-product-block class="klevuProduct" data-id="<%=dataLocal.id%>">
+        <div class="kuProdWrap">
+            <header ku-block data-block-id="ku_landing_result_item_header">
+                <%=helper.render('landingProductBadge', scope, data, dataLocal) %>
+            </header>
+            <% var desc = [dataLocal.summaryAttribute,dataLocal.packageText,dataLocal.summaryDescription].filter(function(el) { return el; }); desc = desc.join(" "); %>
+            <main ku-block data-block-id="ku_landing_result_item_info">
+                <div class="kuProdTop">
+                    <div class="klevuImgWrap">
+                        <a data-id="<%=dataLocal.id%>" href="<%=dataLocal.url%>" class="klevuProductClick kuTrackRecentView">
+                            <img src="<%=dataLocal.image%>" origin="<%=dataLocal.image%>" onerror="klevu.dom.helpers.cleanUpProductImage(this)" alt="<%=updatedProductName%>" class="kuProdImg">
+                            <%=helper.render('landingImageRollover', scope, data, dataLocal) %>
+                        </a>
+                    </div>
+                    <!-- <div class="kuQuickView">
+                        <button data-id="<%=dataLocal.id%>" class="kuBtn kuBtnLight kuQuickViewBtn" role="button" tabindex="0" area-label="">Quick view</button>
+                    </div> -->
+                </div>
+            </main>
+            <footer ku-block="" data-block-id="ku_landing_result_item_footer">
+                <div class="kuProdBottom">
+					<span class="brandName"><%=dataLocal.brand%></span>
+                    <div class="kuName kuClippedOne"><a data-id="<%=dataLocal.id%>" href="<%=dataLocal.url%>" class="klevuProductClick kuTrackRecentView" title="<%= updatedProductName %>"><%= updatedProductName %></a></div>
+                    <% if(dataLocal.inStock && dataLocal.inStock != "yes") { %>
+                        <%=helper.render('landingProductStock', scope, data, dataLocal) %>
+                    <% } else { %>
+                    <% if(klevu.search.modules.kmcInputs.base.getShowPrices()) { %>
+                        <div class="kuPrice">
+                            <%
+                                var kuTotalVariants = klevu.dom.helpers.cleanUpPriceValue(dataLocal.totalVariants);
+                                var kuStartPrice = klevu.dom.helpers.cleanUpPriceValue(dataLocal.startPrice,dataLocal.currency);
+                                var kuSalePrice = klevu.dom.helpers.cleanUpPriceValue(dataLocal.salePrice,dataLocal.currency);
+                                var kuPrice = klevu.dom.helpers.cleanUpPriceValue(dataLocal.price,dataLocal.currency);
+                            %>
+                            <% if(!Number.isNaN(kuSalePrice) && !Number.isNaN(kuPrice) && (kuPrice > kuSalePrice)){ %>
+                                <span class="kuOrigPrice kuClippedOne custom-klevu-org-price">
+                                    <%= helper.processCurrency(dataLocal.currency,parseFloat(dataLocal.price)) %>
+                                </span>
+                                <span class="kuSalePrice kuSpecialPrice kuClippedOne custom-klevu-sale-price">
+                                    <%=helper.processCurrency(dataLocal.currency,parseFloat(dataLocal.salePrice))%>
+                                </span>
+                            <% } else if(!Number.isNaN(kuSalePrice)) { %>
+                                <span class="kuSalePrice kuSpecialPrice">
+                                    <%= helper.processCurrency(dataLocal.currency,parseFloat(dataLocal.salePrice)) %>
+                                </span>
+                            <% } else if(!Number.isNaN(kuPrice)) { %>
+                                <span class="kuSalePrice">
+                                    <%= helper.processCurrency(dataLocal.currency,parseFloat(dataLocal.price)) %>
+                                </span>
+                            <% } %>
+                            <%=helper.render('searchResultProductVATLabel', scope, data, dataLocal) %>
+                        </div>
+                    <% } %>
+                    <% } %>
+                </div>
+                <div class="kuProdAdditional">
+                    <div class="kuProdAdditionalData">
+                        <% if(desc && desc.length) { %>
+                            <div class="kuDesc kuClippedTwo"> <%=desc%> </div>
+                        <% } %>
+                        <%=helper.render('landingProductSwatch',scope,data,dataLocal) %>
+                        <%=helper.render('klevuLandingProductRating',scope,data,dataLocal) %>
+                        <% var isAddToCartEnabled = klevu.search.modules.kmcInputs.base.getAddToCartEnableValue(); %>
+                        <% if(isAddToCartEnabled) { %>
+                            <%=helper.render('landingPageProductAddToCart',scope,data,dataLocal) %> 
+                        <% } %>
+                    </div>
+                </div>
+             </footer>
+        </div>
+    </li>
+</script>
+
+<script type="template/klevu" id="klevuLandingTemplateResults">
+    <div class="kuResultsListing <% if(helper.translate(window.innerHeight > window.innerWidth)) {%>portrait <% } else { %>landscape<% } %>">
+        <div class="productList klevuMeta" data-section="productList">
+            <div class="kuResultContent">
+                <div class="kuResultWrap <%=(data.query.productList.filters.length == 0 )?'kuBlockFullwidth':''%>">
+
+                    <div ku-container data-container-id="ku_landing_main_content_container" data-container-role="content">
+                        <section ku-container data-container-id="ku_landing_main_content_left" data-container-position="left" data-container-role="left">
+                            <div ku-block data-block-id="ku_landing_left_facets">
+                                <%=helper.render('filters',scope,data,"productList") %>
+                            </div>
+                            <div ku-block data-block-id="ku_landing_left_call_outs"></div>
+                            <div ku-block data-block-id="ku_landing_left_banner"></div>
+                        </section>
+                        <section ku-container data-container-id="ku_landing_main_content_center" data-container-position="center" data-container-role="center">
+
+                            <header ku-block data-block-id="ku_landing_result_header">
+                                <%=helper.render('klevuLandingTemplateResultsHeadingTitle',scope,data,"productList") %>
+                                <%=helper.render('filtersTop',scope,data,"productList") %>
+                                <%= helper.render('kuFilterTagsTemplate',scope,data,"productList") %>
+                                <% if(helper.hasResults(data,"productList")) { %>
+                                    <%=helper.render('sortBy',scope,data,"productList") %>
+                                    <%=helper.render('limit',scope,data,"productList") %>
+                                    <%=helper.render('kuTemplateLandingResultsViewSwitch',scope,data,"productList") %>
+                                    <%=helper.render('pagination',scope,data,"productList") %>
+                                <% } %>
+                                <div class="kuClearBoth"></div>
+                            </header>
+
+                            <div ku-block data-block-id="ku_landing_result_items">
+                                <div class="kuResults">
+                                    <% if(helper.hasResults(data,"productList")) { %>
+                                        <ul>
+                                            <% helper.each(data.query.productList.result,function(key,item){ %>
+                                                <% if(item.typeOfRecord == "KLEVU_PRODUCT") { %>
+                                                    <%=helper.render('productBlock',scope,data,item) %>
+                                                <% } %>
+                                            <% }); %>
+                                        </ul>
+                                    <% } else { %>
+                                        <div class="kuNoRecordsFoundLabelTextContainer">
+                                            <span class="kuNoRecordsFoundLabelText"><%= helper.translate("No records found for your selection") %></span>
+                                        </div>
+                                    <% } %>
+                                    <div class="kuClearBoth"></div>
+                                </div>
+                            </div>
+                            <div ku-block data-block-id="ku_landing_other_items">
+                                <%=helper.render('klevuLandingTemplateInfiniteScrollDown',scope,data) %>
+                            </div>
+                            <footer ku-block data-block-id="ku_landing_result_footer"></footer>
+                        </section>
+                        <section ku-container data-container-id="ku_landing_main_content_right" data-container-position="right" data-container-role="right">
+                            <div ku-block data-block-id="ku_landing_right_facets"></div>
+                            <div ku-block data-block-id="ku_landing_right_call_outs"></div>
+                            <div ku-block data-block-id="ku_landing_right_banner"></div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <% if(data.query.contentList) { %>
+            <div class="contentList klevuMeta" data-section="contentList" data-result-view="list">
+                <div class="kuResultContent">
+                    <div class="kuResultWrap <%=(data.query.contentList.filters.length == 0 )?'kuBlockFullwidth':''%>">
+                        <div ku-container data-container-id="ku_landing_main_content_container" data-container-role="content">
+                            <section ku-container data-container-id="ku_landing_main_content_left" data-container-position="left" data-container-role="left">
+                                <div ku-block data-block-id="ku_landing_left_facets">
+                                    <%=helper.render('filters',scope,data,"contentList") %>
+                                </div>
+                                <div ku-block data-block-id="ku_landing_left_call_outs"></div>
+                                <div ku-block data-block-id="ku_landing_left_banner"></div>
+                            </section>
+                            <section ku-container data-container-id="ku_landing_main_content_center" data-container-position="center" data-container-role="center">
+                                <header ku-block data-block-id="ku_landing_result_header">
+                                    <%=helper.render('filtersTop',scope,data,"contentList") %>
+                                    <%= helper.render('kuFilterTagsTemplate',scope,data,"contentList") %>
+                                    <% if(helper.hasResults(data,"contentList")) { %>
+                                        <%=helper.render('limit',scope,data,"contentList") %>
+                                        <%=helper.render('pagination',scope,data,"contentList") %>
+                                    <% } %>
+                                    <div class="kuClearBoth"></div>
+                                </header>
+
+                                <div ku-block data-block-id="ku_landing_result_items">
+                                    <div class="kuClearBoth"></div>
+                                    <div class="kuResults">
+                                        <% if(helper.hasResults(data,"contentList")) { %>
+                                            <ul>
+                                                <% helper.each(data.query.contentList.result,function(key,item){ %>
+                                                    <% if(item.typeOfRecord == "KLEVU_CMS") { %>
+                                                        <%=helper.render('contentBlock',scope,data,item) %>
+                                                    <% }%>
+                                                <% }); %>
+                                            </ul>
+                                        <% } else { %>
+                                            <div class="kuNoRecordsFoundLabelTextContainer">
+                                                <span class="kuNoRecordsFoundLabelText"><%= helper.translate("No records found for your selection") %></span>
+                                            </div>
+                                        <% } %>
+                                        <div class="kuClearBoth"></div>
+                                    </div>
+                                </div>
+                                <div ku-block data-block-id="ku_landing_other_items">
+                                    <%=helper.render('klevuLandingTemplateInfiniteScrollDown',scope,data) %>
+                                </div>
+                                <footer ku-block data-block-id="ku_landing_result_footer"></footer>
+                            </section>
+                            <section ku-container data-container-id="ku_landing_main_content_right" data-container-position="right" data-container-role="right">
+                                <div ku-block data-block-id="ku_landing_right_facets"></div>
+                                <div ku-block data-block-id="ku_landing_right_call_outs"></div>
+                                <div ku-block data-block-id="ku_landing_right_banner"></div>
+                            </section>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <% } %>
+    </div>
+</script>
+
+<script type="template/klevu" id="kuTemplateLandingResultsViewSwitch">
+    <div class="kuLandingResultsViewSwitchContainer">
+    <% if(helper.translate(window.innerWidth < 900)) { %>
+        <a title="<%= helper.translate("List View") %>" class="kuViewSwitch kuListViewBtn" data-value="list">
+            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="22px" height="22px" viewBox="0 0 60 60" fill="#ccc">
+                <rect width="60" height="60"></rect>
+                Sorry, your browser does not support inline SVG.
+            </svg>
+        </a>
+        <a title="<%= helper.translate("Grid View") %>" class="kuViewSwitch kuGridViewBtn" data-value="grid">
+            <svg fill="#ccc" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="22px" height="22px" viewBox="0 0 344.339 344.339" style="enable-background:new 0 0 344.339 344.339; xml:space=" preserve"="">
+                <g>
+                    <g>
+                        <g>
+                            <path d="M0,143.221h134.525V8.671H0V143.221z"></path>
+                        </g>
+                        <g>
+                            <path d="M209.813,8.671v134.544h134.525V8.671H209.813z"></path>
+                        </g>
+                        <g>
+                            <path d="M0,335.668h134.525v-134.55H0V335.668z"></path>
+                        </g>
+                        <g>
+                            <path d="M209.813,335.668h134.525v-134.55H209.813V335.668z"></path>
+                        </g>
+                    </g>
+                </g>
+            </svg>
+        </a>
+        <% } %>
+    </div>
+</script>
+
+<script type="template/klevu" id="klevuLandingTemplateNoResultFound">
+    <div class="kuLandingNoRecordFound klevu-no-record-found">
+        <div class="kuLandingNoResults klevu-no-results">
+            <div class="kuLandingNoResultsInner">
+                <div class="kuLandingNoResultsMessage klevu-no-result-msg">
+                    <span class="no-search-msg"><%= helper.translate("THERE ARE NO RESULTS FOR") %></span>
+                    <span class="no-search-term"><%= helper.translate(' "' + data.settings.termOriginal + '"') %></span>
+                </div>
+                <div class="help-section">
+                    <div class="help-section-title">Need help?</div>
+                    <div class="contact-section row">
+                        <div class="col-6 klevu-telephone-wrapper">
+                            <a class="klevu-telephone-number-link" href="tel:347-395-7720">
+                                <span class="klevu-telephone-image">&nbsp;</span>
+                                <span class="klevu-telephone-number-text">(347) 395-7720</span>
+                            </a>
+                        </div>
+                        <div class="col-6 klevu-email-wrapper">
+                            <a class="klevu-email-link" href="mailto:service@gmail.com">
+                                <span class="klevu-email-image">&nbsp;</span>
+                                <span class="klevu-email-id-text">service@gmail.com</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <%=helper.render('noResultsLandingPopularProductsTemplate', scope, data) %>
+                <%=helper.render('landingNoResultsFoundBanners', scope, data) %>
+                <%=helper.render('noResultsLandingPopularSearches', scope, data) %>
+            </div>
+        </div>
+    </div>
+</script>
+
+<script type="template/klevu" id="klevuNoResultsPopularProductsLanding">
+    <div class="kuNoResultsProductRecommendationSlider kuNoResultsPopularProducts" data-section="noResultsFoundPopularProductList">
+        <% var popularProductList = klevu.getObjectPath(data,"query.noResultsFoundPopularProductList.result");%>
+        <% if(popularProductList && popularProductList.length) { %>
+            <div class="klevuNoResultsRecs klevu-shop-title">
+                <h3><%= helper.translate("Shop Bestsellers") %> </h3>
+            </div>
+            <div class="klevuNoResultsRecsWrap">
+                    <div class="klevuNoResultsRecsResults">
+                        <div class="klevuNoResultsRecsResultsInner klevu-no-results-inner">
+                            <% helper.each(popularProductList, function(key, product){ %>
+                                <%
+                                var updatedProductName = product.name;
+                                if(klevu.search.modules.kmcInputs.base.getSkuOnPageEnableValue()) {
+                                    if(klevu.dom.helpers.cleanUpSku(product.sku)) {
+                                        updatedProductName += klevu.dom.helpers.cleanUpSku(product.sku);
+                                    }
+                                }
+                                %>
+                                <div class="klevuNoResultsRecs-itemWrap klevuRecommendedProduct klevuProduct klevu-product" data-id="<%= product.id %>">
+                                    <div class="klevuNoResultsRecs-item klevu-product-item">
+                                        <div class="klevuNoResultsRecs-itemImg">
+                                            <a href="<%= product.url %>" class="klevuProductClick kuTrackRecentView klevuNoResultsRecsImg mb-4" data-id="<%= product.id %>">
+                                                <img
+                                                    src="<%= product.image %>"
+                                                    origin="<%= product.image %>"
+                                                    onerror="klevu.dom.helpers.cleanUpProductImage(this)"
+                                                    alt="<%= updatedProductName %>"
+                                                    class="prodImg klevu-product-img"
+                                                    width="100%" />
+                                            </a>
+                                        </div>
+                                        <div class="klevuNoResultsRecs-itemDesc">
+                                        <span class="klevu-brandName"><%= helper.translate(product.brand) %></span>
+                                        <a href="<%= product.url %>" title="<%= updatedProductName %>" data-id="<%= product.id %>" class="klevuProductClick kuTrackRecentView klevuNoResultsRecsTitle klevu-product-name"><%= updatedProductName %></a>
+                                        <% if(klevu.search.modules.kmcInputs.base.getShowPrices()) { %>
+                                            <div class="klevuNoResultsRecs-itemPrice klevu-price m-0 row align-items-center justify-content-center">
+                                                <%
+                                                    var kuTotalVariants = klevu.dom.helpers.cleanUpPriceValue(product.totalVariants);
+                                                    var kuStartPrice = klevu.dom.helpers.cleanUpPriceValue(product.startPrice,product.currency);
+                                                    var kuSalePrice = klevu.dom.helpers.cleanUpPriceValue(product.salePrice,product.currency);
+                                                    var kuPrice = klevu.dom.helpers.cleanUpPriceValue(product.price,product.currency);
+                                                %>
+                                                <% if(!Number.isNaN(kuTotalVariants) && !Number.isNaN(kuStartPrice)) { %>
+                                                    <div class="kuSalePrice kuStartPrice">
+                                                        <span><%=helper.processCurrency(product.currency,parseFloat(product.startPrice))%></span>
+                                                    </div>
+                                                <% } else if(!Number.isNaN(kuSalePrice) && !Number.isNaN(kuPrice) && (kuPrice > kuSalePrice)){ %>
+                                                    <span class="kuOrigPrice kuClippedOne klevu-clipped-price">
+                                                        <%= helper.processCurrency(product.currency,parseFloat(product.price)) %>
+                                                    </span>
+                                                    <span class="kuSalePrice kuSpecialPrice kuClippedOne klevu-clipped-orgprice">
+                                                        <%= helper.processCurrency(product.currency,parseFloat(product.salePrice)) %>
+                                                    </span>
+                                                <% } else if(!Number.isNaN(kuSalePrice)) { %>
+                                                    <span class="kuSalePrice kuSpecialPrice">
+                                                        <%= helper.processCurrency(product.currency,parseFloat(product.salePrice)) %>
+                                                    </span>
+                                                <% } else if(!Number.isNaN(kuPrice)) { %>
+                                                    <span class="kuSalePrice">
+                                                        <%= helper.processCurrency(product.currency,parseFloat(product.price)) %>
+                                                    </span>
+                                                <% } %>
+                                                <%=helper.render('searchResultProductVATLabel', scope, data, product) %>
+                                            </div>
+                                        <% } %>
+                                    </div>
+                                    </div>
+                                </div>
+                            <% }) %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <% } %>
+    </div>
+</script>

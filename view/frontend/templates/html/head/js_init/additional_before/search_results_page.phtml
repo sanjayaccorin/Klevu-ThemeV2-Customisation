@@ -1,0 +1,127 @@
+<?php /** @var Magento\Framework\View\Element\Template $block */ ?>
+// Define a new custom event, which will fire after SRLP has initialised
+
+klevu.coreEvent.build({
+    name: "setRemoteConfigLandingOverride",
+    fire: function () {
+        if (klevu.getSetting(klevu,"settings.flags.setRemoteConfigLanding.build", false)) {
+            return true;
+        }
+        return false;
+    },
+    maxCount: 150,
+    delay: 100
+});
+
+klevu.coreEvent.attach("setRemoteConfigLandingOverride", {
+    name: "attachRemoteConfigLandingOverride",
+    fire: function () {
+        klevu.search.landing.getScope().chains.template.events.add({
+            name: "hideLoadMoreButtonForWindowScroll",
+            fire: function (data, scope) {
+                return true;
+            }
+            });
+        klevu.search.landing.getScope().chains.template.events.add({
+            name: "renameButton",
+            fire: function (data, scope) {
+              var target = klevu.getSetting(
+                scope.kScope.settings,
+                "settings.search.searchBoxTarget"
+              );
+              var kuLoadMoreBtn = klevu.dom.find(".kuLoadMoreBtn", target);
+              if (kuLoadMoreBtn.length) {
+                klevu.each(kuLoadMoreBtn, function (key, element) {
+                  element.innerText = 'VIEW MORE';
+                });
+              }
+            },
+          });
+        window.onscroll = function (ev) {
+          if (
+            window.innerHeight + Math.ceil(window.pageYOffset) >=
+            document.body.offsetHeight - 50
+          ) {
+            var hasAlreadyTriggered = klevu.getObjectPath(
+              klevu.search.landing.getScope().data,
+              "context.triggeredFromInfiniteScroll"
+            );
+            if (!hasAlreadyTriggered) {
+              return true;
+            }
+          }
+        };
+        klevu.search.landing.getScope().chains.request.control.addAfter("initRequest", {
+            name: "modifyLandingQuery",
+            fire: function (data, scope) {
+                console.log("data: ", data);
+                klevu.search.modules.noResultsFound.base.buildPopularProductsReq(data, scope, 9);
+            }
+        });
+        // override temaplate
+        klevu.search.landing.getScope().template.setTemplate(
+            klevu.dom.helpers.getHTML("#klevuLandingTemplateSortByCustom"),
+            "sortBy",
+            true
+        );
+
+        klevu.search.landing.getScope().template.setTemplate(
+            klevu.dom.helpers.getHTML("#klevuLandingTemplateProductBlock"),
+            true
+        );
+
+        klevu.search.landing.getScope().template.setTemplate(
+            klevu.dom.helpers.getHTML("#klevuLandingTemplateTabResults"),
+            true
+        );
+
+        klevu.search.landing.getScope().template.setTemplate(
+            klevu.dom.helpers.getHTML("#kuTemplateLandingResultsViewSwitch"),
+            true
+        );
+        klevu.search.landing.getScope().template.setTemplate(
+            klevu.dom.helpers.getHTML("#klevuLandingTemplateResults"),
+            true
+        );
+        klevu.search.landing.getScope().template.setTemplate(
+            klevu.dom.helpers.getHTML("#klevuLandingTemplateNoResultFound"),
+            true
+        );
+        klevu.search.landing.getScope().template.setTemplate(
+            klevu.dom.helpers.getHTML("#klevuNoResultsPopularProductsLanding"),
+            true
+        );
+        klevu.search.landing.getScope().template.setTemplate(
+            klevu.dom.helpers.getHTML("#kuNoResultsPopularSearchesLanding"),
+            true
+        );
+        // override translations
+        klevu.search.landing.getScope().template.setHelper("getSortBy", function(e) {
+            var t = klevu.getSetting(klevu.settings, "settings.storage")
+            , a = "";
+            switch (t.sort.getElement(e) == e ? "RELEVANCE" : t.sort.getElement(e)) {
+            case "PRICE_ASC":
+                a = "Price Low to High";
+                break;
+            case "PRICE_DESC":
+                a = "Price High to Low";
+                break;
+            case "RELEVANCE":
+                a = "Best Selling";
+                break;
+            case "NEW_ARRIVAL_ASC":
+                a = "Newest";
+                break;
+            default:
+                a = "Best Selling"
+            }
+            return a
+        });
+        // power up
+        klevu({
+            powerUp: {
+                landing: true
+            }
+        });
+    }
+});
